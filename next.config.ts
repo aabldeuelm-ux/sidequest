@@ -8,7 +8,6 @@ const withSerwist = withSerwistInit({
 });
 
 const nextConfig: NextConfig = {
-  // @ts-expect-error - undocumented Next 16 config
   turbopack: {},
 };
 

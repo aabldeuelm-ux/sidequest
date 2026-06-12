@@ -6,7 +6,7 @@ import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { SectionHeader } from "@/components/SectionHeader";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { Quest } from "@/types";
-import confetti from "canvas-confetti"; // We need to install this or just use a simple animation
+
 
 const QUEST_IDEAS = [
   { title: "Take a photo of something blue", description: "Find something blue in your environment and capture it for your memory map." },
@@ -25,9 +25,9 @@ export default function DailyQuests() {
   const [mounted, setMounted] = useState(false);
   const [quests, setQuests] = useLocalStorage<Quest[]>("daily_quests", []);
   const [streak, setStreak] = useLocalStorage<number>("quest_streak", 0);
-  
+
   const today = new Date().toISOString().split("T")[0];
-  
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -36,22 +36,22 @@ export default function DailyQuests() {
 
   useEffect(() => {
     if (!mounted) return;
-    
+
     // Generate a new quest for today if one doesn't exist
     if (!currentQuest) {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayStr = yesterday.toISOString().split("T")[0];
-      
+
       const yesterdayQuest = quests.find(q => q.dateAssigned === yesterdayStr);
-      
+
       // If they didn't complete yesterday's quest, reset streak
       if (quests.length > 0 && (!yesterdayQuest || !yesterdayQuest.completed)) {
         setStreak(0);
       }
-      
+
       const randomIdea = QUEST_IDEAS[Math.floor(Math.random() * QUEST_IDEAS.length)];
-      
+
       const newQuest: Quest = {
         id: crypto.randomUUID(),
         title: randomIdea.title,
@@ -59,14 +59,14 @@ export default function DailyQuests() {
         completed: false,
         dateAssigned: today,
       };
-      
+
       setQuests([newQuest, ...quests]);
     }
   }, [mounted, currentQuest, quests, setQuests, setStreak, today]);
 
   const handleComplete = () => {
     if (!currentQuest || currentQuest.completed) return;
-    
+
     // Play celebration animation
     try {
       // Very basic confetti without needing the package
@@ -77,12 +77,12 @@ export default function DailyQuests() {
         // We'll just create a nice visual effect on the card itself using CSS classes
       };
       requestAnimationFrame(frame);
-    } catch (e) {}
+    } catch (e) { }
 
-    const updatedQuests = quests.map(q => 
+    const updatedQuests = quests.map(q =>
       q.id === currentQuest.id ? { ...q, completed: true } : q
     );
-    
+
     setQuests(updatedQuests);
     setStreak(streak + 1);
   };
@@ -110,20 +110,19 @@ export default function DailyQuests() {
       </div>
 
       {/* Current Quest Card */}
-      <div className={`relative overflow-hidden transition-all duration-500 rounded-3xl border p-8 ${
-        currentQuest.completed 
-          ? 'bg-emerald-500/10 border-emerald-500/30' 
-          : 'bg-card border-border shadow-lg'
-      }`}>
+      <div className={`relative overflow-hidden transition-all duration-500 rounded-3xl border p-8 ${currentQuest.completed
+        ? 'bg-emerald-500/10 border-emerald-500/30'
+        : 'bg-card border-border shadow-lg'
+        }`}>
         {/* Background Decoration */}
         <div className="absolute -top-12 -right-12 w-48 h-48 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-12 -left-12 w-48 h-48 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
-        
+
         <div className="relative z-10 flex flex-col items-center text-center space-y-6">
           <div className={`p-4 rounded-full ${currentQuest.completed ? 'bg-emerald-500/20 text-emerald-500' : 'bg-primary/10 text-primary'}`}>
             {currentQuest.completed ? <Trophy className="w-8 h-8" /> : <Target className="w-8 h-8" />}
           </div>
-          
+
           <div className="space-y-2">
             <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">Today's Quest</h2>
             <h1 className={`text-3xl font-bold tracking-tight transition-colors ${currentQuest.completed ? 'text-emerald-500' : 'text-foreground'}`}>
