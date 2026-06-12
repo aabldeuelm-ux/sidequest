@@ -60,7 +60,7 @@ export function LandingPage({ onComplete }: LandingPageProps) {
               Hello there.
             </h1>
             <p className="text-lg text-muted-foreground font-medium">
-              Let's make today count.
+              Let&apos;s make today count.
             </p>
           </div>
         ) : (

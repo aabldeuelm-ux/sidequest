@@ -20,7 +20,6 @@ export function StatCard({ title, value, description, icon, trend, onClick, clas
 
   return (
     <CardWrapper
-      // @ts-ignore
       onClick={onClick}
       className={cn(
         "flex flex-col text-left p-6 bg-card border border-border rounded-xl shadow-sm transition-all duration-200",

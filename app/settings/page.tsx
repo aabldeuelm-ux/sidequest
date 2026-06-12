@@ -1,14 +1,55 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Download, Upload, Trash2, Sun, Moon, Sparkles, ShieldAlert, Check } from "lucide-react";
+import { Download, Upload, Trash2, Sun, Moon, ShieldAlert, LogOut, Camera, Edit2 } from "lucide-react";
 import { SectionHeader } from "@/components/SectionHeader";
 import { PrimaryButton } from "@/components/PrimaryButton";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { LifePassport } from "@/types";
+import { compressImage } from "@/lib/utils";
 
 export default function Settings() {
   const [mounted, setMounted] = useState(false);
   const [theme, setTheme] = useState("dark");
   const [importStatus, setImportStatus] = useState("");
+  const [passport, setPassport] = useLocalStorage<LifePassport | null>("life_passport", null);
+
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editVibe, setEditVibe] = useState("");
+
+  const handleEditProfile = () => {
+    if (passport) {
+      setEditName(passport.name);
+      setEditVibe(passport.vibe);
+      setIsEditingProfile(true);
+    }
+  };
+
+  const handleSaveProfile = () => {
+    if (passport && editName.trim()) {
+      setPassport({
+        ...passport,
+        name: editName.trim(),
+        vibe: editVibe.trim(),
+      });
+      setIsEditingProfile(false);
+    }
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !passport) return;
+    try {
+      const compressedBase64 = await compressImage(file, 400, 400, 0.8);
+      setPassport({
+        ...passport,
+        avatarUrl: compressedBase64,
+      });
+    } catch (error) {
+      alert("Failed to update profile photo.");
+    }
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -25,6 +66,13 @@ export default function Settings() {
       </div>
     );
   }
+
+  const handleLogout = () => {
+    if (confirm("Are you sure you want to log out? You will need to enter your name and vibe again to access your dashboard.")) {
+      setPassport(null);
+      window.location.href = "/";
+    }
+  };
 
   const handleToggleTheme = (newTheme: string) => {
     setTheme(newTheme);
@@ -125,6 +173,78 @@ export default function Settings() {
       />
 
       <div className="space-y-6">
+        {/* Profile Overview */}
+        {passport && (
+          <div className="p-6 bg-card border border-border rounded-xl space-y-4 shadow-sm">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-4 w-full">
+                <div className="relative group shrink-0">
+                  {passport.avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={passport.avatarUrl} alt={passport.name} className="w-16 h-16 rounded-full object-cover border-2 border-border shadow-sm" />
+                  ) : (
+                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary text-2xl font-bold border-2 border-border shadow-sm">
+                      {passport.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <label className="absolute inset-0 bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-opacity backdrop-blur-[2px]">
+                    <Camera className="w-5 h-5" />
+                    <input type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
+                  </label>
+                </div>
+                
+                <div className="flex-1">
+                  {isEditingProfile ? (
+                    <div className="space-y-2">
+                      <input 
+                        type="text" 
+                        value={editName} 
+                        onChange={(e) => setEditName(e.target.value)} 
+                        className="w-full bg-background border border-border rounded-lg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground/50"
+                        placeholder="Your Name"
+                      />
+                      <input 
+                        type="text" 
+                        value={editVibe} 
+                        onChange={(e) => setEditVibe(e.target.value)} 
+                        className="w-full bg-background border border-border rounded-lg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground/50"
+                        placeholder="Current Vibe"
+                      />
+                      <div className="flex gap-2 pt-1">
+                        <button onClick={handleSaveProfile} className="text-xs px-4 py-1.5 bg-foreground text-background rounded-md font-bold transition-transform active:scale-95">Save</button>
+                        <button onClick={() => setIsEditingProfile(false)} className="text-xs px-3 py-1.5 bg-muted text-muted-foreground rounded-md font-semibold transition-colors hover:text-foreground">Cancel</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-lg font-bold text-foreground">{passport.name}</h3>
+                        <button onClick={handleEditProfile} className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-full hover:bg-muted" title="Edit Profile">
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{passport.vibe || "No vibe set"}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {!isEditingProfile && (
+                <button
+                  onClick={handleLogout}
+                  className="px-3 py-1.5 text-xs font-medium text-red-500 bg-red-500/10 hover:bg-red-500/20 rounded-md transition-colors flex items-center gap-1.5 shrink-0"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  Log Out
+                </button>
+              )}
+            </div>
+            <div className="text-xs text-muted-foreground pt-3 border-t border-border flex justify-between items-center">
+              <span>Joined {new Date(passport.joinedDate).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+            </div>
+          </div>
+        )}
+
         {/* Theme select section */}
         <div className="p-6 bg-card border border-border rounded-xl space-y-4">
           <div>

@@ -33,6 +33,7 @@ export interface TimeCapsule {
 export interface LifePassport {
   name: string;
   vibe: string;
+  avatarUrl?: string; // Base64 data URL
   joinedDate: string; // ISO timestamp
 }
 

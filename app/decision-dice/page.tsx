@@ -209,7 +209,7 @@ export default function DecisionDice() {
               <div className="p-4 bg-muted/40 border border-border rounded-lg max-w-sm mx-auto flex items-start gap-3 text-left">
                 <MessageCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                 <p className="text-xs text-muted-foreground italic leading-relaxed">
-                  "{finalDecision.commentary}"
+                  &quot;{finalDecision.commentary}&quot;
                 </p>
               </div>
 
@@ -223,7 +223,7 @@ export default function DecisionDice() {
               <Dices className="w-12 h-12 mx-auto text-muted-foreground/50" />
               <p className="text-sm">Ready to roll.</p>
               <p className="text-xs max-w-[240px]">
-                Add at least two options and hit "Roll Decision" to let destiny decide.
+                Add at least two options and hit &quot;Roll Decision&quot; to let destiny decide.
               </p>
             </div>
           )}
@@ -267,7 +267,7 @@ export default function DecisionDice() {
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground italic leading-relaxed">
-                    "{dec.commentary}"
+                    &quot;{dec.commentary}&quot;
                   </p>
                 </div>
                 <div className="text-[10px] text-muted-foreground shrink-0 font-mono">

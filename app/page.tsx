@@ -108,7 +108,7 @@ export default function Dashboard() {
           Daily Summary
         </h2>
         <p className="text-lg md:text-xl font-medium text-foreground tracking-tight leading-relaxed max-w-2xl">
-          "{dailySummary}"
+          &quot;{dailySummary}&quot;
         </p>
       </div>
 

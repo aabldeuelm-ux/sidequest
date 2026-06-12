@@ -256,8 +256,9 @@ export default function MemoryMap() {
           setTempCaptureType("photo");
           setIsLoading(false);
         }
-      } catch (err: any) {
-        setError(err.message || "Could not process the selected file.");
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Could not process the selected file.";
+        setError(errorMessage);
         console.error("File processing error:", err);
         setIsLoading(false);
       }
