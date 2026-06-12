@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Navigation } from "@/components/Navigation";
 import { OnboardingGuard } from "@/components/OnboardingGuard";
@@ -17,6 +17,22 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "SideQuest | Your Life Operating System",
   description: "A premium life dashboard to track memories, sleep, grass, decisions, and time capsules.",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "SideQuest",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#09090b",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({

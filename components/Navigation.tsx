@@ -13,6 +13,7 @@ import {
   User,
   Edit2,
   LogOut,
+  Target,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
@@ -22,6 +23,7 @@ import { PrimaryButton } from "@/components/PrimaryButton";
 
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/daily-quests", label: "Daily Quests", icon: Target },
   { href: "/memory-map", label: "Memory Map", icon: ImageIcon },
   { href: "/sleep-debt", label: "Sleep Debt", icon: Moon },
   { href: "/decision-dice", label: "Decision Dice", icon: Dices },

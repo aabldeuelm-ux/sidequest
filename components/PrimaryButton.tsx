@@ -1,7 +1,8 @@
 import React from "react";
 import { cn } from "@/lib/utils";
+import { motion, HTMLMotionProps } from "framer-motion";
 
-interface PrimaryButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface PrimaryButtonProps extends Omit<HTMLMotionProps<"button">, "variant"> {
   variant?: "primary" | "secondary" | "danger" | "ghost";
   isLoading?: boolean;
 }
@@ -15,10 +16,12 @@ export function PrimaryButton({
   ...props
 }: PrimaryButtonProps) {
   return (
-    <button
+    <motion.button
+      whileHover={{ scale: disabled || isLoading ? 1 : 1.02 }}
+      whileTap={{ scale: disabled || isLoading ? 1 : 0.97 }}
       disabled={disabled || isLoading}
       className={cn(
-        "relative flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50",
+        "relative flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background disabled:pointer-events-none disabled:opacity-50",
         {
           "bg-primary text-primary-foreground hover:bg-opacity-90 shadow-sm": variant === "primary",
           "bg-secondary text-secondary-foreground hover:bg-opacity-80 border border-border": variant === "secondary",
@@ -56,6 +59,6 @@ export function PrimaryButton({
       ) : (
         children
       )}
-    </button>
+    </motion.button>
   );
 }

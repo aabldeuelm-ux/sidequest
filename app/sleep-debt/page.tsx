@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { Plus, Moon, HelpCircle, Trash2, BatteryCharging, AlertCircle, Calendar } from "lucide-react";
+import { Plus, Moon, HelpCircle, Trash2, BatteryCharging, AlertCircle, Calendar, Activity } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from "recharts";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { SectionHeader } from "@/components/SectionHeader";
 import { EmptyState } from "@/components/EmptyState";
@@ -109,9 +110,17 @@ export default function SleepDebt() {
     }
   }
 
-  // Draw chart calculations
-  const maxSlept = Math.max(12, ...last7Records.map((r) => Math.max(r.hoursSlept, r.hoursNeeded)));
-  const chartHeight = 120; // px
+  const sleepScore = last7Records.length > 0 
+    ? Math.round((last7Records.reduce((acc, curr) => acc + Math.min(curr.hoursSlept / curr.hoursNeeded, 1), 0) / last7Records.length) * 100)
+    : 0;
+
+  // Chart data preparation
+  const chartData = last7Records.map(r => ({
+    name: new Date(r.date).toLocaleDateString("en-US", { weekday: "short" }),
+    slept: r.hoursSlept,
+    needed: r.hoursNeeded,
+    isDeficit: r.hoursSlept < r.hoursNeeded
+  }));
 
   return (
     <div className="space-y-8 max-w-4xl">
@@ -155,13 +164,17 @@ export default function SleepDebt() {
 
             <div className="p-6 bg-card border border-border rounded-xl">
               <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-2">
-                Target sleep (average)
+                Sleep Score
               </h3>
-              <p className="text-3xl font-bold text-foreground">
-                {avgNeeded.toFixed(1)} <span className="text-sm font-normal text-muted-foreground">hrs / night</span>
-              </p>
-              <p className="text-xs text-muted-foreground mt-2">
-                Average slept: {avgSlept.toFixed(1)} hrs.
+              <div className="flex items-end gap-2">
+                <p className="text-4xl font-black text-foreground">
+                  {sleepScore}
+                </p>
+                <span className="text-sm font-medium text-muted-foreground mb-1">/ 100</span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                <Activity className="w-3.5 h-3.5" />
+                Based on your last 7 days target vs actual.
               </p>
             </div>
 
@@ -181,59 +194,42 @@ export default function SleepDebt() {
 
           {/* SVG Sleep Chart */}
           <div className="p-6 bg-card border border-border rounded-xl">
-            <h3 className="text-sm font-semibold text-foreground mb-6">Sleep Chart (Last 7 Logs)</h3>
-            <div className="w-full">
-              {/* Chart container */}
-              <div className="relative flex items-end justify-between h-[150px] border-b border-border pb-2 px-4">
-                {/* Horizontal dotted grid line for avgNeeded */}
-                <div
-                  className="absolute left-0 right-0 border-t border-dashed border-muted-foreground/30 pointer-events-none"
-                  style={{
-                    bottom: `${((avgNeeded / maxSlept) * chartHeight) + 8}px`,
-                  }}
-                >
-                  <span className="absolute right-1 -top-2.5 text-[9px] bg-card px-1 text-muted-foreground font-mono">
-                    Target: {avgNeeded.toFixed(1)} hrs
-                  </span>
-                </div>
-
-                {last7Records.map((record, index) => {
-                  const sleptHeight = (record.hoursSlept / maxSlept) * chartHeight;
-                  const neededHeight = (record.hoursNeeded / maxSlept) * chartHeight;
-                  const dateObj = new Date(record.date);
-                  const label = dateObj.toLocaleDateString("en-US", { weekday: "short" });
-
-                  return (
-                    <div key={record.id} className="flex flex-col items-center flex-1 group">
-                      <div className="relative w-full flex justify-center gap-1">
-                        {/* Target marker (dot or thin line) */}
-                        <div
-                          className="absolute w-2 h-2 rounded-full bg-zinc-400 border border-card pointer-events-none"
-                          style={{ bottom: `${neededHeight}px` }}
-                          title={`Target: ${record.hoursNeeded} hrs`}
-                        />
-                        {/* Sleep bar */}
-                        <div
-                          className="w-6 sm:w-8 bg-blue-500/20 hover:bg-blue-500/40 border border-blue-500/30 rounded-t-sm transition-colors duration-200"
-                          style={{ height: `${sleptHeight}px` }}
-                          title={`Slept: ${record.hoursSlept} hrs`}
-                        />
-                      </div>
-                      <span className="text-[10px] text-muted-foreground mt-2 font-mono">{label}</span>
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="flex items-center gap-4 mt-4 text-[10px] text-muted-foreground px-4">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-sm font-semibold text-foreground">Sleep Chart (Last 7 Logs)</h3>
+              <div className="flex items-center gap-4 text-[10px] text-muted-foreground">
                 <span className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 bg-blue-500/30 border border-blue-500/30 rounded-xs" />
-                  Hours Slept
+                  <span className="w-2.5 h-2.5 bg-blue-500 rounded-xs" />
+                  Slept
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-zinc-400" />
-                  Target Hours
+                  <span className="w-2.5 h-2.5 rounded-full bg-red-500/50" />
+                  Deficit
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-4 h-0 border-t-2 border-dashed border-zinc-500" />
+                  Target
                 </span>
               </div>
+            </div>
+            
+            <div className="w-full h-[250px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888888' }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888888' }} />
+                  <Tooltip 
+                    cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                    contentStyle={{ backgroundColor: '#09090b', border: '1px solid #27272a', borderRadius: '8px', fontSize: '12px' }}
+                    itemStyle={{ color: '#fff' }}
+                  />
+                  <ReferenceLine y={avgNeeded} stroke="#71717a" strokeDasharray="3 3" />
+                  <Bar dataKey="slept" radius={[4, 4, 0, 0]} maxBarSize={40}>
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.isDeficit ? '#ef4444' : '#3b82f6'} fillOpacity={entry.isDeficit ? 0.8 : 1} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </div>
 

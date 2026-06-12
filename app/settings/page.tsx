@@ -92,6 +92,7 @@ export default function Settings() {
         grass_stats: JSON.parse(localStorage.getItem("grass_stats") || "{}"),
         decisions: JSON.parse(localStorage.getItem("decisions") || "[]"),
         time_capsules: JSON.parse(localStorage.getItem("time_capsules") || "[]"),
+        daily_quests: JSON.parse(localStorage.getItem("daily_quests") || "[]"),
       };
 
       const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
@@ -129,13 +130,15 @@ export default function Settings() {
             parsed.sleep_records !== undefined ||
             parsed.grass_stats !== undefined ||
             parsed.decisions !== undefined ||
-            parsed.time_capsules !== undefined)
+            parsed.time_capsules !== undefined ||
+            parsed.daily_quests !== undefined)
         ) {
           if (parsed.memories) localStorage.setItem("memories", JSON.stringify(parsed.memories));
           if (parsed.sleep_records) localStorage.setItem("sleep_records", JSON.stringify(parsed.sleep_records));
           if (parsed.grass_stats) localStorage.setItem("grass_stats", JSON.stringify(parsed.grass_stats));
           if (parsed.decisions) localStorage.setItem("decisions", JSON.stringify(parsed.decisions));
           if (parsed.time_capsules) localStorage.setItem("time_capsules", JSON.stringify(parsed.time_capsules));
+          if (parsed.daily_quests) localStorage.setItem("daily_quests", JSON.stringify(parsed.daily_quests));
           
           setImportStatus("Success");
           setTimeout(() => {

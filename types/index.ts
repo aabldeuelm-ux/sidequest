@@ -5,6 +5,9 @@ export interface Memory {
   date: string; // ISO timestamp or YYYY-MM-DD
   createdAt?: string; // ISO timestamp
   type?: "photo" | "video"; // Default to photo for backwards compatibility
+  mood?: string;
+  tags?: string[];
+  location?: string;
 }
 
 export interface SleepRecord {
@@ -35,5 +38,13 @@ export interface LifePassport {
   vibe: string;
   avatarUrl?: string; // Base64 data URL
   joinedDate: string; // ISO timestamp
+}
+
+export interface Quest {
+  id: string;
+  title: string;
+  description: string;
+  completed: boolean;
+  dateAssigned: string; // YYYY-MM-DD
 }
 

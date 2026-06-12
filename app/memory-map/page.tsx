@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Plus, Image as ImageIcon, Trash2, Calendar, Camera, X, RefreshCw, Check, Search, Video as VideoIcon } from "lucide-react";
+import { Plus, Image as ImageIcon, Trash2, Calendar, Camera, X, RefreshCw, Check, Search, Video as VideoIcon, MapPin, Tag, Smile } from "lucide-react";
 import { useIndexedDB } from "@/hooks/useIndexedDB";
 import { SectionHeader } from "@/components/SectionHeader";
 import { EmptyState } from "@/components/EmptyState";
@@ -18,6 +18,15 @@ const FILTERS = [
   { id: "contrast", name: "Contrast", style: "contrast(150%)" },
 ];
 
+const MOODS = [
+  { emoji: "🤩", label: "Excited" },
+  { emoji: "😄", label: "Happy" },
+  { emoji: "😊", label: "Good" },
+  { emoji: "😐", label: "Neutral" },
+  { emoji: "😔", label: "Sad" },
+  { emoji: "😤", label: "Frustrated" },
+];
+
 export default function MemoryMap() {
   const [memories, setMemories, isMemoriesLoaded] = useIndexedDB<Memory[]>("memories-idb", []);
   
@@ -25,6 +34,9 @@ export default function MemoryMap() {
   const [caption, setCaption] = useState("");
   const [photoBase64, setPhotoBase64] = useState("");
   const [date, setDate] = useState("");
+  const [mood, setMood] = useState("");
+  const [tags, setTags] = useState("");
+  const [location, setLocation] = useState("");
 
   useEffect(() => {
     setDate(new Date().toISOString().split("T")[0]);
@@ -282,6 +294,9 @@ export default function MemoryMap() {
       caption: caption.trim(),
       date,
       type: tempCaptureType,
+      mood: mood || undefined,
+      tags: tags ? tags.split(",").map(t => t.trim()).filter(Boolean) : undefined,
+      location: location.trim() || undefined,
       createdAt: new Date().toISOString(),
     };
 
@@ -290,6 +305,9 @@ export default function MemoryMap() {
     setCaption("");
     setPhotoBase64("");
     setDate(new Date().toISOString().split("T")[0]);
+    setMood("");
+    setTags("");
+    setLocation("");
   };
 
   const handleDeleteMemory = (id: string) => {
@@ -301,9 +319,13 @@ export default function MemoryMap() {
     }
   };
 
-  const filteredMemories = memories.filter(m => 
-    m.caption.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredMemories = memories
+    .filter(m => 
+      m.caption.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (m.tags && m.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()))) ||
+      (m.location && m.location.toLowerCase().includes(searchQuery.toLowerCase()))
+    )
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20 md:pb-0">
@@ -396,12 +418,32 @@ export default function MemoryMap() {
                 </button>
               </div>
               <div className="p-4 flex-1 flex flex-col justify-between">
-                <p className="text-sm font-medium text-foreground line-clamp-2 leading-relaxed">
-                  {memory.caption}
-                </p>
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-4">
+                <div>
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <p className="text-base font-semibold text-foreground line-clamp-2 leading-tight">
+                      {memory.caption}
+                    </p>
+                    {memory.mood && <span className="text-xl" title={MOODS.find(m => m.emoji === memory.mood)?.label}>{memory.mood}</span>}
+                  </div>
+                  {memory.location && (
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
+                      <MapPin className="w-3.5 h-3.5" />
+                      <span className="truncate">{memory.location}</span>
+                    </div>
+                  )}
+                  {memory.tags && memory.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {memory.tags.map((tag, i) => (
+                        <span key={i} className="px-2 py-0.5 bg-secondary text-secondary-foreground text-[10px] uppercase tracking-wider font-bold rounded-md">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-2 border-t border-border/50 pt-3">
                   <Calendar className="w-3.5 h-3.5" />
-                  <span>{formatDate(memory.date)}</span>
+                  <span className="font-medium">{formatDate(memory.date)}</span>
                 </div>
               </div>
             </div>
@@ -418,6 +460,9 @@ export default function MemoryMap() {
           setCaption("");
           setPhotoBase64("");
           setDate(new Date().toISOString().split("T")[0]);
+          setMood("");
+          setTags("");
+          setLocation("");
         }}
         title="Capture Moment"
       >
@@ -498,16 +543,62 @@ export default function MemoryMap() {
             />
           </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Date of Memory
+              </label>
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Location (Optional)
+              </label>
+              <input
+                type="text"
+                placeholder="Where was this?"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+            </div>
+          </div>
+
           <div className="space-y-1.5">
             <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Date of Memory
+              Mood
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {MOODS.map(m => (
+                <button
+                  key={m.emoji}
+                  type="button"
+                  onClick={() => setMood(m.emoji === mood ? "" : m.emoji)}
+                  className={`px-3 py-1.5 rounded-full text-sm transition-all border ${mood === m.emoji ? 'bg-primary/20 border-primary text-primary shadow-sm scale-105' : 'bg-muted border-border hover:bg-muted/80 text-foreground scale-100'}`}
+                >
+                  <span className="mr-1">{m.emoji}</span> {m.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Tags (Optional)
             </label>
             <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
+              type="text"
+              placeholder="e.g. travel, family, concert"
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
               className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
             />
+            <p className="text-[10px] text-muted-foreground">Separate tags with commas</p>
           </div>
 
           {error && <p className="text-xs font-medium text-red-500">{error}</p>}
@@ -522,6 +613,9 @@ export default function MemoryMap() {
                 setCaption("");
                 setPhotoBase64("");
                 setDate(new Date().toISOString().split("T")[0]);
+                setMood("");
+                setTags("");
+                setLocation("");
               }}
             >
               Cancel

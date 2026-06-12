@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { Plus, X, Dices, RotateCcw, Clock, Trash2, Sparkles, MessageCircle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { SectionHeader } from "@/components/SectionHeader";
 import { PrimaryButton } from "@/components/PrimaryButton";
@@ -9,7 +10,12 @@ import { EmptyState } from "@/components/EmptyState";
 import { formatDate } from "@/lib/utils";
 import { Decision } from "@/types";
 
-const DEFAULT_OPTIONS = ["Pizza", "Burger", "Shawarma"];
+const MODES = {
+  "Food": ["Pizza", "Burger", "Shawarma", "Sushi", "Salad"],
+  "Yes/No": ["Yes", "No", "Maybe later"],
+  "Movie Picker": ["Action", "Comedy", "Sci-Fi", "Horror", "Documentary"],
+  "Custom": []
+};
 
 const COMMENTARIES = [
   "Entropy has spoken. Do not disobey the dice.",
@@ -24,13 +30,21 @@ const COMMENTARIES = [
 
 export default function DecisionDice() {
   const [decisions, setDecisions] = useLocalStorage<Decision[]>("decisions", []);
-  const [options, setOptions] = useState<string[]>(DEFAULT_OPTIONS);
+  const [activeMode, setActiveMode] = useState<keyof typeof MODES>("Food");
+  const [options, setOptions] = useState<string[]>(MODES["Food"]);
   const [newOption, setNewOption] = useState("");
 
   // Animation states
   const [isRolling, setIsRolling] = useState(false);
   const [rolledIndex, setRolledIndex] = useState<number | null>(null);
   const [finalDecision, setFinalDecision] = useState<Decision | null>(null);
+
+  const handleModeSwitch = (mode: keyof typeof MODES) => {
+    setActiveMode(mode);
+    setOptions(MODES[mode]);
+    setFinalDecision(null);
+    setRolledIndex(null);
+  };
 
   const handleAddOption = (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -93,7 +107,7 @@ export default function DecisionDice() {
   };
 
   const handleResetOptions = () => {
-    setOptions(DEFAULT_OPTIONS);
+    setOptions(MODES[activeMode]);
     setFinalDecision(null);
     setRolledIndex(null);
   };
@@ -105,7 +119,7 @@ export default function DecisionDice() {
   };
 
   return (
-    <div className="space-y-8 max-w-4xl">
+    <div className="space-y-8 max-w-4xl pb-20 md:pb-0">
       <SectionHeader
         title="Decision Dice"
         description="Outsource trivial choices to entropy and escape the paralysis of analysis."
@@ -118,11 +132,25 @@ export default function DecisionDice() {
             Setup Options
           </h3>
 
+          {/* Mode Switcher */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            {(Object.keys(MODES) as (keyof typeof MODES)[]).map(mode => (
+              <button
+                key={mode}
+                onClick={() => handleModeSwitch(mode)}
+                disabled={isRolling}
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${activeMode === mode ? 'bg-primary text-primary-foreground shadow-md scale-105' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+              >
+                {mode}
+              </button>
+            ))}
+          </div>
+
           {/* Add Option Form */}
           <form onSubmit={handleAddOption} className="flex gap-2">
             <input
               type="text"
-              placeholder="e.g. Sushi, Movie, Workout"
+              placeholder="e.g. New Option"
               value={newOption}
               onChange={(e) => setNewOption(e.target.value)}
               disabled={isRolling}
@@ -145,11 +173,12 @@ export default function DecisionDice() {
                 {options.map((opt, idx) => {
                   const isHighlighted = rolledIndex === idx;
                   return (
-                    <span
+                    <motion.span
                       key={idx}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-150 ${
+                      animate={isHighlighted ? { scale: 1.1, backgroundColor: "hsl(var(--primary))", color: "hsl(var(--primary-foreground))" } : { scale: 1 }}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors duration-150 ${
                         isHighlighted
-                          ? "bg-primary text-primary-foreground border-primary scale-105"
+                          ? "border-primary"
                           : "bg-muted text-foreground border-border"
                       }`}
                     >
@@ -158,11 +187,11 @@ export default function DecisionDice() {
                         type="button"
                         onClick={() => handleRemoveOption(idx)}
                         disabled={isRolling}
-                        className="text-muted-foreground hover:text-foreground disabled:opacity-50"
+                        className="text-current opacity-70 hover:opacity-100 disabled:opacity-50"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
-                    </span>
+                    </motion.span>
                   );
                 })}
               </div>
@@ -189,44 +218,69 @@ export default function DecisionDice() {
         </div>
 
         {/* Final Selection Result card */}
-        <div className="p-6 bg-card border border-border rounded-xl flex flex-col items-center justify-center text-center relative overflow-hidden">
-          {isRolling ? (
-            <div className="space-y-4 py-8 animate-pulse">
-              <Dices className="w-16 h-16 text-amber-500 animate-spin mx-auto" />
-              <p className="text-sm text-muted-foreground font-medium">Consulting the oracle of dice...</p>
-            </div>
-          ) : finalDecision ? (
-            <div className="space-y-6 py-4 animate-scale-up w-full">
-              <div>
-                <span className="text-[10px] font-bold bg-amber-500/10 text-amber-500 px-2 py-1 rounded uppercase tracking-wider">
-                  Oracle Decision
-                </span>
-                <h2 className="text-3xl font-bold text-foreground mt-4 tracking-tight">
-                  {finalDecision.selectedOption}
-                </h2>
-              </div>
+        <div className="p-6 bg-card border border-border rounded-xl flex flex-col items-center justify-center text-center relative overflow-hidden min-h-[300px]">
+          <AnimatePresence mode="wait">
+            {isRolling ? (
+              <motion.div 
+                key="rolling"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                className="space-y-4 py-8"
+              >
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 0.5, repeat: Infinity, ease: "linear" }}
+                >
+                  <Dices className="w-16 h-16 text-amber-500 mx-auto" />
+                </motion.div>
+                <p className="text-sm text-muted-foreground font-medium">Consulting the oracle of dice...</p>
+              </motion.div>
+            ) : finalDecision ? (
+              <motion.div 
+                key="result"
+                initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                className="space-y-6 py-4 w-full"
+              >
+                <div>
+                  <span className="text-[10px] font-bold bg-amber-500/10 text-amber-500 px-2 py-1 rounded uppercase tracking-wider">
+                    Oracle Decision
+                  </span>
+                  <h2 className="text-3xl font-bold text-foreground mt-4 tracking-tight">
+                    {finalDecision.selectedOption}
+                  </h2>
+                </div>
 
-              <div className="p-4 bg-muted/40 border border-border rounded-lg max-w-sm mx-auto flex items-start gap-3 text-left">
-                <MessageCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                <p className="text-xs text-muted-foreground italic leading-relaxed">
-                  &quot;{finalDecision.commentary}&quot;
+                <div className="p-4 bg-muted/40 border border-border rounded-lg max-w-sm mx-auto flex items-start gap-3 text-left">
+                  <MessageCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                  <p className="text-xs text-muted-foreground italic leading-relaxed">
+                    &quot;{finalDecision.commentary}&quot;
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Saved to quest log.</span>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div 
+                key="idle"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="space-y-3 py-8 text-muted-foreground"
+              >
+                <Dices className="w-12 h-12 mx-auto text-muted-foreground/50" />
+                <p className="text-sm">Ready to roll.</p>
+                <p className="text-xs max-w-[240px]">
+                  Select a mode or add at least two options and hit &quot;Roll Decision&quot; to let destiny decide.
                 </p>
-              </div>
-
-              <div className="flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground">
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                <span>Saved to quest log.</span>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-3 py-8 text-muted-foreground">
-              <Dices className="w-12 h-12 mx-auto text-muted-foreground/50" />
-              <p className="text-sm">Ready to roll.</p>
-              <p className="text-xs max-w-[240px]">
-                Add at least two options and hit &quot;Roll Decision&quot; to let destiny decide.
-              </p>
-            </div>
-          )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
@@ -257,24 +311,32 @@ export default function DecisionDice() {
           />
         ) : (
           <div className="bg-card border border-border rounded-xl overflow-hidden divide-y divide-border">
-            {decisions.map((dec) => (
-              <div key={dec.id} className="p-4 hover:bg-muted/10 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-foreground">{dec.selectedOption}</span>
-                    <span className="text-[10px] text-muted-foreground font-mono">
-                      from {dec.options.join(", ")}
-                    </span>
+            <AnimatePresence>
+              {decisions.map((dec) => (
+                <motion.div 
+                  key={dec.id} 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="p-4 hover:bg-muted/10 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-foreground">{dec.selectedOption}</span>
+                      <span className="text-[10px] text-muted-foreground font-mono truncate max-w-[150px] sm:max-w-[300px]">
+                        from {dec.options.join(", ")}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground italic leading-relaxed">
+                      &quot;{dec.commentary}&quot;
+                    </p>
                   </div>
-                  <p className="text-xs text-muted-foreground italic leading-relaxed">
-                    &quot;{dec.commentary}&quot;
-                  </p>
-                </div>
-                <div className="text-[10px] text-muted-foreground shrink-0 font-mono">
-                  {formatDate(dec.date)}
-                </div>
-              </div>
-            ))}
+                  <div className="text-[10px] text-muted-foreground shrink-0 font-mono">
+                    {formatDate(dec.date)}
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         )}
       </div>
